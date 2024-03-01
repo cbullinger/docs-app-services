@@ -822,10 +822,17 @@ paths:
       tags:
         - values
       operationId: adminUpdateValue
-      summary: Update a value definition in an application
+      summary: Update a value definition in an application.
       description: |-
         Update a [value](https://www.mongodb.com/docs/realm/values-and-secrets)
         definition in an application.
+      requestBody:
+        description: The updated value definition.
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/NewValue"
       responses:
         "200":
           description: Successfully updated the value.
@@ -3337,7 +3344,7 @@ paths:
       summary: Create a new Function
       description: Create a new [Function](https://www.mongodb.com/docs/realm/functions#std-label-functions).
       requestBody:
-        description: The function to create
+        description: The function to create.
         required: true
         content:
           application/json:
@@ -3388,6 +3395,13 @@ paths:
       operationId: adminUpdateFunction
       summary: Update a Function
       description: Update a [Function](https://www.mongodb.com/docs/realm/functions#std-label-functions).
+      requestBody:
+        description: The function to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FunctionConstructor"
       responses:
         "200":
           description: The function was successfully updated.
