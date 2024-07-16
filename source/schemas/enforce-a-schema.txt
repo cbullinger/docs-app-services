@@ -23,26 +23,87 @@ Define & Enforce a Schema
    :depth: 1
    :class: singlecol
 
-You can control the shape and contents of documents in a collection by defining
+You can control the shape and contents of documents in an Atlas collection by defining
 a :ref:`schema <schemas>`. Schemas let you require specific fields, control the
 type of a field's value, and validate changes before committing write
-operations.
+operations. This guide shows you how to define, configure, and deploy a schema
+for a linked MongoDB Atlas collection.
 
-This guide shows you how to define, configure, and deploy a schema for a linked
-MongoDB Atlas collection.
+An App Services schema is required to use Atlas Device Sync, which lets you sync
+data between client devices and MongoDB Atlas. For more information on defining
+an App Services schema specifically for Device Sync use, refer to
+:ref:`create-sync-schema`.
+
+.. example::
+
+   A group is using App Services to run a voting app where users aged 13 or
+   older can submit a ranked list of their favorite colors. They store
+   the votes in a MongoDB collection named ``votes``, where each
+   document represents a single person's vote. Each vote must include
+   the person's name, age, and an array of their favorite colors. Each
+   color has a ``rank``, ``name``, and a ``hexCode``.
+   The following is a typical document in the ``votes`` collection:
+
+   .. code-block:: json
+
+      {
+         "name": "Jane Doe",
+         "age": 42,
+         "favoriteColors": [
+               { "rank": 1, "name": "RebeccaPurple", "hexCode": "#663399" },
+               { "rank": 2, "name": "DodgerBlue", "hexCode": "#1E90FF" },
+               { "rank": 3, "name": "SeaGreen", "hexCode": "#2E8B57" },
+         ]
+      }
+
+   The group can use the following schema to guarantee that the listed
+   constraints are satisfied for each document in the ``votes``
+   collection:
+
+   .. code-block:: json
+
+      {
+         "bsonType": "object",
+         "required": ["name", "age", "favoriteColors"],
+         "properties": {
+            "name": {
+               "bsonType": "string"
+            },
+            "age": {
+               "bsonType": "int",
+               "minimum": 13,
+               "exclusiveMinimum": false
+            },
+            "favoriteColors": {
+               "bsonType": "array",
+               "uniqueItems": true,
+               "items": {
+                     "bsonType": "object",
+                     "properties": {
+                     "rank": { "bsonType": "int" },
+                     "name": { "bsonType": "string" },
+                     "hexCode": {
+                        "bsonType": "string",
+                        "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                     }
+                  }
+               }
+            }
+         }
+      }
+
+Define and Deploy an App Services Schema
+----------------------------------------
 
 .. include:: /includes/adf-rules-note.rst
 
-Define a Schema
----------------
+You can define an App Services schema through the App Services UI or using the
+App Services CLI:
 
-You can define a schema for a collection in the App Services UI or with the
-App Services CLI.
-
-When using the App Services UI, you can choose to:
-
-- Generate a schema from existing data in the collection, and modify as needed.
-- Define a schema manually by adding field-level schema definitions.
+- If you use the App Services UI, you have to option to either:
+   - Generate a schema from existing data in the collection, then modify as needed.
+   - Define your schema manually by adding field-level schema definitions.
+- If you use the CLI, you must create your schema manually.
 
 .. tabs-realm-admin-interfaces::
 
@@ -53,8 +114,8 @@ When using the App Services UI, you can choose to:
 
          .. step:: Navigate to the Schema Screen
 
-            In the left navigation menu, click :guilabel:`Schema` beneath
-            :guilabel:`Data Access` to open the schema editor. The Collections
+            In the left navigation menu, click :guilabel:`Schema` in the
+            :guilabel:`Data Access` section. The Collections
             configuration screen displays in the :guilabel:`Collections` tab.
             Atlas App Services scans your linked cluster for existing
             collections and lists them on the left side of the schema editor.
@@ -66,28 +127,29 @@ When using the App Services UI, you can choose to:
                :lightbox:
                :alt: The Schema screen in the App Services UI
 
-         .. step:: Generate a Schema from Existing Data (Optional)
+         .. step:: Define a Schema for the Collection
 
-            If you already have data in your collection, App Services can
-            sample a subset of the documents in the collection and generate a
-            schema for you based on the sample. If you already have a schema or
-            prefer to define one manually, skip to the next step.
+            You can define a single BSON schema for each collection. The root-level
+            type of each collection's schema is an ``object`` schema that represents a
+            document in the collection.
 
-            You can configure the number of documents to sample and use the
-            MongoDB query language to limit the sample to specific documents. By
-            default, App Services randomly samples up to 500 documents from
-            the entire collection.
+            For the selected collection, you can define its schema in one of two ways:
 
-            To generate a schema from existing data:
+            - If you already have data in your collection, App Services can sample a subset of the documents in the collection and generate a schema for you based on the sample.
 
-            1. From the collection configuration on the right side of the schema
-               editor, click :guilabel:`Generate Schema` to open the sample configuration
+            You can configure the number of documents to sample and use the MongoDB query language to limit the sample to specific documents. By default, App Services randomly samples up to 500 documents from the entire collection.
+
+            - Define your schema manually by adding field-level schema definitions within the root schema's ``properties`` field. The available fields depend on the type of value that the property schema defines. For a list of supported types and details on how to configure them, see :ref:`schema types <schema-types>`.
+
+            To generate a schema from existing data in the selected collection:
+
+            1. Click :guilabel:`Generate Schema` to show the sample configuration
                screen.
 
             2. Specify the sample size, up to a maximum of 50,000 documents.
 
             3. Optionally, click :guilabel:`Advanced` and specify a query,
-               projection, and/or sort to refine the sample query. Use the query
+               projection, or sort to refine the sample query. Use the query
                and sort filters to sample a specific subset of documents and use
                the projection filter to sample a specific subset of fields from
                each document.
@@ -100,77 +162,8 @@ When using the App Services UI, you can choose to:
                :lightbox:
                :alt: The Generate Schema sample size input in the App Services UI
 
+            5. Modify the schema manually, as needed.
 
-         .. step:: Define or Modify the Schema
-
-            You can define a schema manually or modify an existing schema by adding field-level schema definitions.
-
-            You may define a single BSON schema for each collection. The root-level type
-            of each collection schema is an ``object`` schema that represents a document
-            in the collection. You can define additional schemas for document fields
-            within the root schema's ``properties`` field.
-
-            The fields available in a JSON schema object depend on the type of value that
-            the schema defines. For a list of supported types and details on how to
-            configure them, see :ref:`schema types <schema-types>`.
-
-            .. example::
-
-               A group is using App Services to run a voting app where users aged 13 or
-               older can submit a ranked list of their favorite colors. They store
-               the votes in a MongoDB collection named ``votes`` where each
-               document represents a single person's vote. Each vote must include
-               the person's name, age, and an array of their favorite colors. Each
-               color has a ``rank``, ``name``, and a ``hexCode``.
-               The following is a typical document in the ``votes`` collection:
-
-               .. code-block:: json
-
-                  {
-                    "name": "Jane Doe",
-                    "age": 42,
-                    "favoriteColors": [
-                      { "rank": 1, "name": "RebeccaPurple", "hexCode": "#663399" },
-                      { "rank": 2, "name": "DodgerBlue", "hexCode": "#1E90FF" },
-                      { "rank": 3, "name": "SeaGreen", "hexCode": "#2E8B57" },
-                    ]
-                  }
-
-               The group can use the following schema to guarantee that the listed
-               constraints are satisfied for each document in the ``votes``
-               collection:
-
-               .. code-block:: json
-
-                  {
-                    "bsonType": "object",
-                    "required": ["name", "age", "favoriteColors"],
-                    "properties": {
-                      "name": {
-                        "bsonType": "string"
-                      },
-                      "age": {
-                        "bsonType": "int",
-                        "minimum": 13,
-                        "exclusiveMinimum": false
-                      },
-                      "favoriteColors": {
-                        "bsonType": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "bsonType": "object",
-                          "properties": {
-                            "rank": { "bsonType": "int" },
-                            "name": { "bsonType": "string" },
-                            "hexCode": {
-                              "bsonType": "string",
-                              "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
 
          .. step:: Add Change Validation Expressions (Optional)
 
