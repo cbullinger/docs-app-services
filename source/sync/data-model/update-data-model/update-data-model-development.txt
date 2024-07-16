@@ -1,0 +1,209 @@
+.. _update-data-model-development-mode:
+
+==================================
+Update a Data Model in Development
+==================================
+
+.. meta::
+   :description: Update your data model while developing your client app with Development Mode.
+
+.. facet::
+   :name: genre
+   :values: tutorial
+
+.. contents:: On this page
+   :local:
+   :backlinks: none
+   :depth: 2
+   :class: singlecol
+
+After you :ref:`define your data model <create-sync-schema>`, you can use Device
+Sync's Development Mode feature to streamline the process of updating your data
+model as you develop your application.
+
+To learn how to update your data model once your app is in Production, refer to :ref:`update-data-model-production-apps`.
+
+.. include:: /includes/important-disable-dev-mode-production.rst
+
+.. _dev-mode-breaking-changes:
+
+Development Mode
+----------------
+
+**Development Mode** is a Device Sync configuration setting that lets you
+define and modify your SDK data model from your client code, and App
+Services automatically handles the server-side updates. For more information on
+Development Mode and how to enable it in your App, refer to
+:ref:`development-mode`.
+
+The first time a client connects and syncs data while Development Mode is
+enabled, App Services :ref:`maps your idiomatic client model
+<map-realm-to-atlas-with-development-mode>`
+to an automatically generated App Services schema. Each generated schema is
+assigned to a collection in the linked cluster with the same name as the
+corresponding object type. As you update your data model and sync data,
+App Services automatically applies the changes.
+
+Non-Breaking Changes in Development Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When Development Mode is enabled, you can make :ref:`non-breaking changes
+<non-breaking-changes-overview>` to your client-side data model. The next time
+you connect a client, App Services automatically applies these changes without
+any additional handling.
+
+Non-breaking changes to a client-side data model include:
+
+- Adding a new object type
+- Adding a new property
+- Adding a default value on an existing property
+- Removing an object type
+- Removing a property
+
+Breaking Changes in Development Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When Development Mode is enabled, App Services can automatically apply :ref:`breaking changes
+<breaking-changes-overview>`. Instead of having to manually handle breaking changes through
+a client reset or partner collection, as you would for an app in production, you
+can make breaking changes to your client-side data model and App Services
+applies them the next time you connect a client.
+
+Note that you *must* make the breaking changes to the client-side SDK data
+model, and then connect a client with an empty synced database. This is described
+in the :ref:`update-data-model-development-mode-procedure` procedure below.
+
+Breaking changes to a client-side data model include:
+
+- Renaming an object type
+- Renaming a property
+- Changing a property data type
+- Change whether a property is optional or required
+
+.. example::
+
+   A group is developing a social media application. When they first defined
+   their data model, they made ``birthday`` a required property of the ``User``
+   object type. Due to privacy concerns over the amount of user data stored,
+   management creates a new requirement to make this property optional.
+
+   Developers enable :guilabel:`Development Mode` in the App Services UI, then
+   update the ``User`` object model within the client code. They delete their
+   local database file, then connect the client. App Services applies the
+   required change to their server-side ``User`` collection schema.
+
+.. _update-data-model-development-mode-prerequisites:
+
+Prerequisites
+`````````````
+
+To make breaking changes with Development Mode, your App Services App must
+meet the following requirements:
+
+- Created *after* September 13, 2023
+- Uses one of the following minimum Device SDK versions:
+
+  - C++ SDK v1.0.0
+  - Flutter SDK v1.6.0
+  - Java SDK v10.16.2
+  - Kotlin SDK v11.1.1
+  - .NET SDK v11.6.0
+  - Node.js SDK v12.2.0
+  - React Native SDK v12.2.0
+  - Swift SDK v10.42.2
+
+.. note:: Contact Support to Enable in Older Apps
+
+   For apps created *before* September 13, 2023 that can meet the other
+   requirements, you can contact support to enable this feature. Otherwise, you
+   must manually apply any breaking changes through the App Services UI. For
+   more information, refer to :ref:`update-data-model-production-apps`.
+
+.. _update-data-model-development-mode-procedure:
+
+Update Your Data Model with Development Mode
+--------------------------------------------
+
+The following describes how to update your data model with breaking or
+non-breaking changes in an App using Development Mode.
+
+.. procedure::
+
+   .. step:: Before You Begin
+
+      Before you update your data model, confirm the following:
+
+      - Device Sync with Development Mode is enabled.
+        To learn how, refer to :ref:`enable-sync`.
+
+      - If you are making breaking changes, your App meets the
+        requirements listed in the
+        :ref:`update-data-model-development-mode-prerequisites` section.
+
+   .. step:: Delete Client Data (Breaking Changes Only)
+
+      If your updates include breaking changes, you must connect a client with
+      the updated data model using an empty synced database. This ensures that
+      Device Sync can successfully overwrite the current server-side schema and
+      apply the breaking changes received from the client.
+
+      To do this, you must delete all local data before you update your data model:
+
+      1. Sync your local changes to the backend. Any unsynced changes will be lost.
+      2. Ensure that all changes that you can't tolerate losing are synced,
+         then delete your local ``.realm`` database file and client data.
+
+      To learn how to delete your local database file in your preferred SDK,
+      refer to the following documentation:
+
+      - C++ SDK - not currently supported
+      - :ref:`Flutter SDK <flutter-delete-realm>`
+      - :ref:`Kotlin SDK <kotlin-delete-a-realm>`
+      - :ref:`Java SDK <io_realm_Realm_deleteRealm>`
+      - :ref:`.NET SDK <dotnet-delete-a-realm>`
+      - :js-sdk:`Node.js SDK <Realm.html#.deleteFile>`
+      - :js-sdk:`React Native SDK <Realm.html#.deleteFile>`
+      - :ref:`Swift SDK <swift-delete-a-realm>`
+
+   .. step:: Update Your SDK Data Model
+
+      Make the desired updates to your client-side objects. For information on the specific updates you can make, refer to :ref:`update-your-data-model`.
+
+   .. step:: Open a Synced Database and Sync Changes
+
+      1. Open a synced database with your updated data model. If your updates
+         include breaking changes, this *must* be an empty synced database.
+      2. Run your client app to sync your updated data model to the App Services
+         backend.
+
+      Once the client connects, Device Sync overwrites the existing server-side
+      schema with the updated client-side data model.
+
+      For more information on opening a synced database in your preferred SDK, refer to the following documentation:
+
+      - :ref:`C++ SDK <cpp-open-synced-realm>`
+      - :ref:`Flutter SDK <flutter-open-synced-realm>`
+      - :ref:`Kotlin SDK <kotlin-open-a-synced-realm>`
+      - :ref:`Java SDK <java-open-a-synced-realm>`
+      - :ref:`.NET SDK <dotnet-configure-and-open-a-synced-realm>`
+      - :js-sdk:`Node.js SDK <node-open-a-synced-realm>`
+      - :js-sdk:`React Native SDK <react-native-open-a-synced-realm>`
+      - :ref:`Swift SDK <ios-configure-and-open-a-synced-realm>`
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+You might encounter one of the following errors when attempting to update your data model:
+
+MongoEncodingError
+  If any existing Atlas documents do *not* match the uploaded client-side
+  data model, they cannot be synced to the client. An error message is sent to
+  the client with instructions on how to sync these documents. For more
+  information, refer to :ref:`unsynced-documents`.
+
+Changes cannot be made in additive-only schema mode
+  If you make a breaking change and the client still has data in its local
+  database file, the app will fail at startup with an error indicating that the
+  ``changes cannot be made in additive-only schema mode``. To resolve, ensure
+  that you delete all existing local data before re-attempting with your
+  changes.
